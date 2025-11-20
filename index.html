@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lilo Scheduler - Wake. Plan. Win.</title>
+
+  <!-- Fonts & Icons -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@400;500&family=Roboto+Mono&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --lilo-blue: #0b6efd;
+      --mint: #00c2a8;
+      --amber: #ff8b3d;
+      --bg-panel: #f5f7fa;
+      --text-primary: #111827;
+      --text-muted: #6b7280;
+      --radius-2xl: 16px;
+      --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.08);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Inter", "Roboto", sans-serif;
+      background-color: var(--bg-panel);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: white;
+      box-shadow: var(--shadow-sm);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      margin-bottom: 32px;
+      padding: 0 12px;
+    }
+
+    .logo-icon {
+      background: linear-gradient(
+        135deg,
+        var(--lilo-blue) 0%,
+        var(--mint) 50%,
+        var(--amber) 100%
+      );
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      color: white;
+    }
+
+    .logo-text {
+      font-weight: 800;
+      font-size: 20px;
+      background: linear-gradient(
+        135deg,
+        var(--lilo-blue) 0%,
+        var(--mint) 50%,
+        var(--amber) 100%
+      );
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-items {
+      margin-top: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border-radius: var(--radius-2xl);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+      color: var(--text-muted);
+    }
+
+    .nav-item:hover {
+      background-color: var(--bg-panel);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background-color: var(--lilo-blue);
+      color: white;
+    }
+
+    .nav-item i {
+      margin-right: 12px;
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-weight: 700;
+      font-size: 24px;
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .quick-add-btn {
+      background-color: var(--lilo-blue);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--radius-2xl);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+    }
+
+    .quick-add-btn:hover {
+      background-color: #0a63e4;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .quick-add-btn i {
+      margin-right: 8px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--lilo-blue) 0%, var(--mint) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .logout-btn {
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--radius-2xl);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-4px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .card-action {
+      color: var(--lilo-blue);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    /* Task List */
+    .task-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-checkbox {
+      margin-right: 12px;
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid #ddd;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .task-checkbox.checked {
+      background-color: var(--mint);
+      border-color: var(--mint);
+      color: white;
+    }
+
+    .task-content {
+      flex: 1;
+    }
+
+    .task-title {
+      font-weight: 500;
+    }
+
+    .task-time {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Calendar */
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .calendar-header {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .calendar-day {
+      text-align: center;
+      padding: 12px 0;
+      border-radius: var(--radius-2xl);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .calendar-day:hover {
+      background-color: var(--bg-panel);
+    }
+
+    .calendar-day.active {
+      background-color: var(--lilo-blue);
+      color: white;
+    }
+
+    .calendar-day.has-events {
+      position: relative;
+    }
+
+    .calendar-day.has-events::after {
+      content: "";
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--amber);
+    }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 16px;
+      border-radius: var(--radius-2xl);
+      background: var(--bg-panel);
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Lilo AI Assistant */
+    .lilo-assistant {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(
+        135deg,
+        var(--lilo-blue) 0%,
+        var(--mint) 100%
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      z-index: 1000;
+      transition: var(--transition);
+    }
+
+    .lilo-assistant:hover {
+      transform: scale(1.05);
+    }
+
+    .lilo-assistant i {
+      font-size: 24px;
+    }
+
+    .lilo-chat-window {
+      position: fixed;
+      bottom: 90px;
+      right: 24px;
+      width: 360px;
+      height: 480px;
+      background: white;
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      overflow: hidden;
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .lilo-chat-window.open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .chat-header {
+      padding: 16px;
+      background: linear-gradient(
+        135deg,
+        var(--lilo-blue) 0%,
+        var(--mint) 100%
+      );
+      color: white;
+      display: flex;
+      align-items: center;
+    }
+
+    .chat-header i {
+      margin-right: 12px;
+      font-size: 20px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin-bottom: 16px;
+      display: flex;
+    }
+
+    .message.lilo {
+      flex-direction: row;
+    }
+
+    .message.user {
+      flex-direction: row-reverse;
+    }
+
+    .message-bubble {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 18px;
+    }
+
+    .message.lilo .message-bubble {
+      background-color: var(--bg-panel);
+      border-top-left-radius: 4px;
+    }
+
+    .message.user .message-bubble {
+      background-color: var(--lilo-blue);
+      color: white;
+      border-top-right-radius: 4px;
+    }
+
+    .chat-input {
+      padding: 16px;
+      border-top: 1px solid #eee;
+      display: flex;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: var(--radius-2xl);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .chat-input input:focus {
+      border-color: var(--lilo-blue);
+    }
+
+    .chat-input button {
+      margin-left: 12px;
+      background-color: var(--lilo-blue);
+      color: white;
+      border: none;
+      border-radius: var(--radius-2xl);
+      width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Auth overlay */
+    #auth-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: var(--shadow-md);
+      padding: 24px 24px 20px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      margin-bottom: 16px;
+      border-radius: 999px;
+      background-color: #f3f4f6;
+      padding: 4px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 8px 0;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .auth-tab.active {
+      background-color: white;
+      color: var(--lilo-blue);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+    }
+
+    .auth-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .auth-group {
+      margin-bottom: 12px;
+    }
+
+    .auth-group label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .auth-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      outline: none;
+      font-size: 14px;
+    }
+
+    .auth-group input:focus {
+      border-color: var(--lilo-blue);
+    }
+
+    .auth-btn {
+      width: 100%;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--lilo-blue), var(--mint));
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .auth-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* DS Badges */
+    .ds-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        padding: 16px;
+        flex-direction: row;
+        overflow-x: auto;
+      }
+
+      .logo {
+        margin-bottom: 0;
+        margin-right: 16px;
+      }
+
+      .nav-items {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .nav-item {
+        margin-bottom: 0;
+        margin-right: 8px;
+        white-space: nowrap;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lilo-chat-window {
+        width: 300px;
+        right: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Auth Overlay -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <div class="auth-tab active" data-mode="login">Login</div>
+        <div class="auth-tab" data-mode="signup">Sign up</div>
+      </div>
+      <div class="auth-title">Welcome to Lilo Scheduler</div>
+      <div class="auth-subtitle">
+        Wake. Plan. Win. Log in to see your dashboard.
+      </div>
+
+      <div class="auth-group">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com" />
+      </div>
+      <div class="auth-group">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" placeholder="••••••••" />
+      </div>
+
+      <button class="auth-btn" id="authActionBtn">Login</button>
+      <div class="auth-note" id="authNote">
+        No account yet? Switch to Sign up tab.
+      </div>
+    </div>
+  </div>
+
+  <!-- Alarm sound -->
+  <audio id="alarmSound" src="assets/alarm.mp3" preload="auto"></audio>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="logo-text">Lilo Scheduler</div>
+      </div>
+
+      <div class="nav-items">
+        <div class="nav-item active">
+          <i class="fas fa-home"></i>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-calendar"></i>
+          <span>Calendar</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-tasks"></i>
+          <span>Tasks</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-bell"></i>
+          <span>Alarms</span>
+        </div>
+        <div class="nav-item">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Header -->
+      <div class="header">
+        <h1 class="page-title">Dashboard</h1>
+        <div class="user-menu">
+          <button class="quick-add-btn" id="openLiloBtn">
+            <i class="fas fa-plus"></i> Quick Add
+          </button>
+          <div class="user-avatar" id="userAvatar">LS</div>
+          <span class="logout-btn" id="logoutBtn">Logout</span>
+        </div>
+      </div>
+
+      <!-- Dashboard Grid -->
+      <div class="dashboard-grid">
+        <!-- Wake up To-Do List -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Wake up To-Do List</h2>
+            <span class="card-action">Synced with Firebase</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              margin-bottom: 12px;
+              flex-wrap: wrap;
+            "
+          >
+            <input
+              id="newTaskTitle"
+              type="text"
+              placeholder="Add a new task..."
+              style="
+                flex: 2;
+                padding: 8px 10px;
+                border-radius: 12px;
+                border: 1px solid #ddd;
+                outline: none;
+              "
+            />
+            <input
+              id="newTaskTime"
+              type="time"
+              style="
+                flex: 1;
+                padding: 8px 10px;
+                border-radius: 12px;
+                border: 1px solid #ddd;
+                outline: none;
+              "
+            />
+            <button
+              id="addTaskBtn"
+              class="quick-add-btn"
+              style="margin-right: 0"
+            >
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+          <div class="task-list" id="todoList">
+            <!-- Tasks from Firestore -->
+          </div>
+        </div>
+
+        <!-- Calendar View -->
+        <div class="card" id="calendar-section">
+          <div class="card-header">
+            <h2 class="card-title">June 2023</h2>
+            <span class="card-action">Calendar (static demo)</span>
+          </div>
+          <div class="calendar">
+            <div class="calendar-header">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
+            <!-- Calendar days generated by JS -->
+          </div>
+        </div>
+
+        <!-- Alarm Statistics -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Alarm Statistics</h2>
+            <span class="card-action">Based on completed alarms</span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="statCompleted">0%</div>
+              <div class="stat-label">Completion Rate</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statActiveAlarms">0</div>
+              <div class="stat-label">Active Alarms</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statRecurring">0</div>
+              <div class="stat-label">Recurring</div>
+            </div>
+          </div>
+          <canvas
+            id="alarmChart"
+            height="150"
+            style="margin-top: 20px"
+          ></canvas>
+        </div>
+
+        <!-- Upcoming Alarms -->
+        <div class="card" id="alarms-section">
+          <div class="card-header">
+            <h2 class="card-title">Upcoming Alarms</h2>
+            <span class="card-action">FIFO Queue View</span>
+          </div>
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              margin-bottom: 12px;
+              flex-wrap: wrap;
+            "
+          >
+            <input
+              id="newAlarmTitle"
+              type="text"
+              placeholder="Alarm label..."
+              style="
+                flex: 2;
+                padding: 8px 10px;
+                border-radius: 12px;
+                border: 1px solid #ddd;
+              "
+            />
+            <input
+              id="newAlarmTime"
+              type="time"
+              style="
+                flex: 1;
+                padding: 8px 10px;
+                border-radius: 12px;
+                border: 1px solid #ddd;
+              "
+            />
+            <button
+              id="addAlarmBtn"
+              class="quick-add-btn"
+              style="margin-right: 0"
+            >
+              <i class="fas fa-bell"></i>
+            </button>
+          </div>
+          <div class="task-list" id="alarmList">
+            <!-- Alarms from Firestore -->
+          </div>
+          <button
+            id="testAlarmBtn"
+            class="quick-add-btn"
+            style="margin-top: 12px; background-color: var(--mint)"
+          >
+            <i class="fas fa-play"></i> Test Alarm Sound
+          </button>
+        </div>
+
+        <!-- DS Task Creator -->
+        <div class="card" id="tasks-section">
+          <div class="card-header">
+            <h2 class="card-title">Data Structure Task View</h2>
+            <span class="card-action ds-badge">
+              <i class="fas fa-code-branch"></i> LIFO + FIFO Demo
+            </span>
+          </div>
+          <p
+            style="
+              font-size: 13px;
+              color: var(--text-muted);
+              margin-bottom: 8px;
+            "
+          >
+            Every task is stored in <strong>Firebase</strong> and also mapped
+            into a <strong>FIFO Queue</strong> (upcoming tasks) and a
+            <strong>LIFO Stack</strong> (deep focus). This shows Data
+            Structures working inside a real scheduler.
+          </p>
+          <div class="stats-grid">
+            <div>
+              <h3
+                style="
+                  font-size: 14px;
+                  font-weight: 600;
+                  margin-bottom: 4px;
+                "
+              >
+                FIFO Queue (Upcoming)
+              </h3>
+              <div id="fifoList" class="task-list"></div>
+              <button
+                id="dequeueBtn"
+                class="quick-add-btn"
+                style="margin-top: 8px; background-color: var(--mint)"
+              >
+                <i class="fas fa-arrow-right-arrow-left"></i> Dequeue (FIFO)
+              </button>
+            </div>
+            <div>
+              <h3
+                style="
+                  font-size: 14px;
+                  font-weight: 600;
+                  margin-bottom: 4px;
+                "
+              >
+                LIFO Stack (Last Focus)
+              </h3>
+              <div id="lifoList" class="task-list"></div>
+              <button
+                id="popBtn"
+                class="quick-add-btn"
+                style="margin-top: 8px; background-color: var(--amber)"
+              >
+                <i class="fas fa-level-down-alt"></i> Pop (LIFO)
+              </button>
+            </div>
+            <div
+              style="
+                font-size: 12px;
+                color: var(--text-muted);
+                align-self: flex-start;
+              "
+            >
+              <strong>How it works?</strong><br />
+              • <strong>Enqueue</strong>: Every new task goes to the end of the
+              queue.<br />
+              • <strong>Dequeue</strong>: First task comes out first (FIFO).<br />
+              • <strong>Push</strong>: Newest task goes on top of the stack.<br />
+              • <strong>Pop</strong>: Last added task is removed first (LIFO).
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="card" id="settings-section">
+          <div class="card-header">
+            <h2 class="card-title">Settings</h2>
+            <span class="card-action">Profile &amp; app preferences</span>
+          </div>
+          <p
+            style="
+              font-size: 13px;
+              color: var(--text-muted);
+              margin-bottom: 8px;
+            "
+          >
+            For project / viva: this section shows configuration summary.
+            Clicking the sidebar <strong>Settings</strong> button or the
+            profile avatar scrolls here.
+          </p>
+          <ul
+            style="
+              font-size: 13px;
+              color: var(--text-muted);
+              line-height: 1.8;
+            "
+          >
+            <li>
+              🔊 Alarm sound:
+              <strong>Enabled</strong>
+              (see <code>assets/alarm.mp3</code>)
+            </li>
+            <li>
+              🤖 Lilo AI:
+              <strong>Gemini 1.5 Flash</strong>
+              (configured in <code>scripts/liloAI.js</code>)
+            </li>
+            <li>
+              ☁ Firebase project:
+              <strong>lilo-scheduler-57cdb</strong>
+              (config in <code>scripts/firebase.js</code>)
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lilo AI Assistant Floating Button -->
+  <div class="lilo-assistant">
+    <i class="fas fa-comment"></i>
+  </div>
+
+  <!-- Lilo Chat Window -->
+  <div class="lilo-chat-window">
+    <div class="chat-header">
+      <i class="fas fa-robot"></i>
+      <span>Lilo - Your Scheduling Assistant</span>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message lilo">
+        <div class="message-bubble">
+          Hi there! I'm Lilo, your scheduling assistant. I'll suggest a happy,
+          productive day for you. ✨
+        </div>
+      </div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="chatInput" placeholder="Ask Lilo anything..." />
+      <button id="chatSendBtn">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main JS entry (keeps all 7 JS files modular) -->
+  <script type="module" src="scripts/main.js"></script>
+</body>
+</html>
